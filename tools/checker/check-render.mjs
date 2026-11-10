@@ -96,6 +96,28 @@ for (const url of pages) {
     if (m.residual) { res.ok = false; res.problems.push("residual raw LaTeX in rendered text"); }
     if (m.hasMathSource && m.mjx === 0) { res.ok = false; res.problems.push("page has math but produced no typeset output"); }
     if (!m.langSwitchHref) { res.ok = false; res.problems.push("no language-switch link"); }
+    // A language link that exists but points at the wrong place is worse than none:
+    // assert it really resolves, really changes language, and is not a doubled prefix
+    // (the classic "/zh/zh/" bug when the switcher guesses the site root wrongly).
+    if (m.langSwitchHref) {
+      const targetPath = new URL(m.langSwitchHref).pathname;
+      const hereIsZh = url.startsWith("/zh/");
+      const targetIsZh = /\/zh(\/|$)/.test(targetPath);
+      if (/\/(zh\/zh|en\/en)\//.test(targetPath) || /\/zh\/zh\//.test(targetPath)) {
+        res.ok = false; res.problems.push("language switch has a doubled prefix: " + targetPath);
+      }
+      if (targetIsZh === hereIsZh) {
+        res.ok = false; res.problems.push("language switch does not change language: " + targetPath);
+      }
+      try {
+        const resp = await page.request.get(m.langSwitchHref);
+        if (resp.status() !== 200) {
+          res.ok = false; res.problems.push(`language switch target ${targetPath} -> HTTP ${resp.status()}`);
+        }
+      } catch (e) {
+        res.ok = false; res.problems.push("language switch target unreachable: " + e.message);
+      }
+    }
     res.metrics = m;
 
     // mobile: no horizontal overflow
