@@ -5,7 +5,12 @@
 // wrapped only after MathJax has finished (so we never touch rendered formulas),
 // never inside code, links, headings or existing cards, and at most a few times
 // per page so the prose does not turn into a sea of dots.
+//
+// NOTE: mdBook hashes additional-js filenames (glossary-<hash>.js), so the script
+// cannot be found later by name. Capture our own URL while we are executing.
 (function () {
+  var SELF_SRC = (document.currentScript && document.currentScript.src) || "";
+
   var TERMS = [
     { en: ["one-time password", "OTP"], zh: ["一次性密码", "OTP"],
       short_en: "A password valid for a single login and then discarded.",
@@ -47,9 +52,8 @@
       short_en: "A vendor claim that the server cannot read the vault, even when it behaves maliciously.",
       short_zh: "厂商宣称即使服务端作恶也读不到保险库内容的一种说法。" },
     { en: ["master password"], zh: ["主密码"],
-      short_zh: "The single password from which all vault keys are derived; never stored on the server.",
-      en_short: "",
-      short_en: "The single password from which all vault keys are derived; never stored on the server." },
+      short_en: "The single password from which all vault keys are derived; never stored on the server.",
+      short_zh: "派生全部保险库密钥的唯一口令；服务器不保存它。" },
     { en: ["vault"], zh: ["保险库", "密码库"],
       short_en: "The encrypted container holding a user's credentials and other items.",
       short_zh: "存放用户凭据等条目的加密容器。" },
@@ -72,14 +76,16 @@
 
   var isZh = /\/zh(\/|$)/.test(location.pathname) || document.documentElement.lang.slice(0, 2) === "zh";
 
-  function glossOf(term) {
-    return isZh ? term.short_zh : term.short_en;
-  }
-  function wordsOf(term) {
-    return isZh ? term.zh : term.en;
-  }
-  function labelOf(term) {
-    return isZh ? term.zh[0] : term.en[0];
+  function glossOf(term) { return isZh ? term.short_zh : term.short_en; }
+  function wordsOf(term) { return isZh ? term.zh : term.en; }
+  function labelOf(term) { return isZh ? term.zh[0] : term.en[0]; }
+
+  // The glossary page sits at the root of whichever book this script belongs to,
+  // and this script also lives at that root, so its own URL gives us the answer.
+  function glossaryHref() {
+    if (!SELF_SRC) return "appendix-glossary.html";
+    var base = SELF_SRC.slice(0, SELF_SRC.lastIndexOf("/") + 1);
+    return base + "appendix-glossary.html";
   }
 
   function run() {
@@ -92,7 +98,8 @@
         var p = node.parentNode;
         while (p && p !== root) {
           if (SKIP.test(p.tagName) || p.classList.contains("gloss-term") ||
-              p.classList.contains("gloss-card") || p.classList.contains("source-card")) {
+              p.classList.contains("gloss-card") || p.classList.contains("source-card") ||
+              p.classList.contains("aside") || p.classList.contains("hook")) {
             return NodeFilter.FILTER_REJECT;
           }
           p = p.parentNode;
@@ -145,13 +152,14 @@
     card.className = "gloss-card";
     document.body.appendChild(card);
     var timer = null;
+
     function show(target) {
       card.innerHTML = '<div class="gloss-card-title"></div><div class="gloss-card-body"></div>' +
         '<div class="gloss-card-link"></div>';
       card.querySelector(".gloss-card-title").textContent = target.dataset.glossTitle;
       card.querySelector(".gloss-card-body").textContent = target.dataset.gloss;
       var a = document.createElement("a");
-      a.href = relativeGlossaryPath();
+      a.href = glossaryHref();
       a.textContent = isZh ? "查看术语表 →" : "See glossary →";
       card.querySelector(".gloss-card-link").appendChild(a);
       card.classList.add("visible");
@@ -162,6 +170,7 @@
       card.style.left = Math.max(8, left) + "px";
     }
     function hide() { card.classList.remove("visible"); }
+
     root.addEventListener("mouseover", function (e) {
       if (e.target.classList && e.target.classList.contains("gloss-term")) {
         clearTimeout(timer);
@@ -176,7 +185,7 @@
     root.addEventListener("click", function (e) {
       if (e.target.classList && e.target.classList.contains("gloss-term")) {
         e.preventDefault();
-        location.href = relativeGlossaryPath();
+        location.href = glossaryHref();
       }
     });
     card.addEventListener("mouseenter", function () { clearTimeout(timer); });
@@ -184,25 +193,8 @@
     document.addEventListener("scroll", hide, true);
   }
 
-  function relativeGlossaryPath() {
-    // Works for both books because the glossary page sits at the book root.
-    var depth = location.pathname.replace(/\/[^/]*$/, "").split("/").filter(Boolean).length;
-    var up = depth >= 1 ? "../".repeat(0) : "";
-    // Compute depth from the site root using the script URL like lang-switch.js.
-    var src = "";
-    var scripts = document.getElementsByTagName("script");
-    for (var i = 0; i < scripts.length; i++) {
-      if (/glossary\.js/.test(scripts[i].src)) { src = scripts[i].src; break; }
-    }
-    if (!src) return "appendix-glossary.html";
-    var base = src.slice(0, src.lastIndexOf("/") + 1);
-    var here = location.href.split("#")[0].split("?")[0];
-    return base + "appendix-glossary.html";
-  }
-
   function ready() {
     if (typeof MathJax !== "undefined" && MathJax.startup && MathJax.startup.document) {
-      // Wait for typesetting to settle, then decorate.
       MathJax.startup.promise.then(function () { setTimeout(run, 0); });
     } else {
       window.addEventListener("load", function () { setTimeout(run, 300); });
