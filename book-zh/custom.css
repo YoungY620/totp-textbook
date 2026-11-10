@@ -1,0 +1,135 @@
+:root {
+  --content-max-width: 860px;
+}
+
+/* CJK-friendly typography */
+html[lang^="zh"] .content,
+.zh .content {
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Source Han Sans SC", sans-serif;
+  line-height: 1.85;
+}
+
+.content p {
+  text-align: justify;
+}
+
+/* Reading comfort: give long chapters a bit more breathing room */
+.content h2 {
+  margin-top: 2.2em;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--table-border-color);
+}
+.content h3 {
+  margin-top: 1.6em;
+}
+
+/* Source-paper callout at the top of every chapter */
+.source-card {
+  border-left: 4px solid var(--links);
+  background: var(--quote-bg);
+  padding: 0.7em 1em;
+  margin: 1em 0 1.6em;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+.source-card p {
+  margin: 0.25em 0;
+  text-align: left;
+}
+
+/* Language switch button in the nav bar */
+.lang-switch {
+  font-size: 0.85em;
+  padding: 3px 9px;
+  margin-right: 8px;
+  border: 1px solid var(--sidebar-active);
+  border-radius: 4px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.lang-switch:hover {
+  background: var(--sidebar-active);
+}
+
+/* Wikipedia-style glossary hover cards */
+.gloss-term {
+  border-bottom: 1px dotted var(--links);
+  cursor: help;
+  position: relative;
+}
+.gloss-card {
+  position: absolute;
+  z-index: 50;
+  width: min(360px, 82vw);
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--table-border-color);
+  border-radius: 6px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+  padding: 10px 12px;
+  font-size: 0.86em;
+  line-height: 1.55;
+  text-align: left;
+  display: none;
+}
+.gloss-card.visible {
+  display: block;
+}
+.gloss-card .gloss-card-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.gloss-card a {
+  font-size: 0.92em;
+}
+
+/* Wide tables on small screens */
+.content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --content-max-width: 100%;
+  }
+  .content {
+    padding: 0 10px;
+  }
+}
+
+/* Storytelling aside — one per chapter, short, sourced */
+.aside {
+  border: 1px solid var(--table-border-color);
+  border-left: 4px solid var(--sidebar-active);
+  background: var(--quote-bg);
+  border-radius: 4px;
+  padding: 0.8em 1.1em;
+  margin: 1.5em 0;
+  font-size: 0.94em;
+}
+.aside p {
+  margin: 0.35em 0;
+  text-align: left;
+}
+.aside .aside-label {
+  font-weight: 600;
+  color: var(--links);
+}
+.aside .aside-source {
+  font-size: 0.86em;
+  color: var(--fg);
+  opacity: 0.75;
+  margin-top: 0.5em;
+}
+
+/* Chapter-opening hook: the concrete scene that starts each chapter */
+.hook {
+  font-size: 1.02em;
+  font-style: normal;
+  border-bottom: 1px dashed var(--table-border-color);
+  padding-bottom: 0.7em;
+  margin-bottom: 1.2em;
+}

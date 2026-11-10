@@ -1,0 +1,28 @@
+[book]
+title = "一次性密码、验证器与密码管理器"
+authors = ["course-textbook-builder"]
+description = "TOTP、验证器应用与密码管理器加密原理的起源与演进"
+language = "zh-CN"
+src = "src"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/YoungY620/totp-textbook"
+edit-url-template = "https://github.com/YoungY620/totp-textbook/edit/main/book-zh/src/{path}"
+additional-css = ["custom.css"]
+additional-js = ["mathjax.js", "lang-switch.js", "glossary.js"]
+no-section-label = true
+
+[output.html.search]
+enable = true
+limit-results = 30
+use-boolean-and = true
+
+[output.html.fold]
+enable = true
+level = 0
+
+[preprocessor.mathprotect]
+command = "python3 ../tools/mathprotect.py"
+renderers = ["html"]

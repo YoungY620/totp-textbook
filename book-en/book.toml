@@ -1,0 +1,28 @@
+[book]
+title = "One-Time Passwords, Authenticators, and Password Managers"
+authors = ["course-textbook-builder"]
+description = "A reader on the origin and evolution of TOTP, authenticator apps, and password-manager cryptography"
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/YoungY620/totp-textbook"
+edit-url-template = "https://github.com/YoungY620/totp-textbook/edit/main/book-en/src/{path}"
+additional-css = ["custom.css"]
+additional-js = ["mathjax.js", "lang-switch.js", "glossary.js"]
+no-section-label = true
+
+[output.html.search]
+enable = true
+limit-results = 30
+use-boolean-and = true
+
+[output.html.fold]
+enable = true
+level = 0
+
+[preprocessor.mathprotect]
+command = "python3 ../tools/mathprotect.py"
+renderers = ["html"]

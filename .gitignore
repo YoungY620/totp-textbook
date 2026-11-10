@@ -1,0 +1,8 @@
+site/
+.build-en/
+.build-zh/
+book-en/book/
+book-zh/book/
+tools/checker/node_modules/
+tools/checker/package-lock.json
+.DS_Store
