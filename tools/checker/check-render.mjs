@@ -6,13 +6,20 @@
 // leaked through, that images load, that the language switch works, and that the
 // console is clean. Screenshots of representative pages are written to /tmp.
 //
-// Usage: node check-render.mjs <siteDir> [urlPrefixToScreenshot...]
+// Usage: node check-render.mjs <siteDir> [urlSubstringToScreenshot...]
+//        node check-render.mjs <liveBaseUrl> <siteDir> [...]
+// The second form re-runs the identical checks against a deployed site, using the
+// local build only to enumerate the pages to visit.
 import { chromium } from "playwright";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 
-const siteDir = path.resolve(process.argv[2] || "site");
+const first = process.argv[2] || "site";
+const live = /^https?:/.test(first);
+const siteDir = path.resolve(live ? process.argv[3] : first);
+const liveBase = live ? first.replace(/\/$/, "") : null;
+const shotArgs = process.argv.slice(live ? 4 : 3);
 const screenshotAll = process.env.SHOT_ALL === "1";
 
 function walk(dir, out = []) {
@@ -28,24 +35,29 @@ const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript
   ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml",
   ".woff2": "font/woff2", ".woff": "font/woff", ".ico": "image/x-icon" };
 
-const server = http.createServer((req, res) => {
-  let p = decodeURIComponent(req.url.split("?")[0]);
-  let file = path.join(siteDir, p);
-  if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
-  if (!fs.existsSync(file)) { res.writeHead(404); res.end("404"); return; }
-  res.writeHead(200, { "content-type": MIME[path.extname(file)] || "application/octet-stream" });
-  fs.createReadStream(file).pipe(res);
-});
-
-await new Promise((r) => server.listen(0, "127.0.0.1", r));
-const base = `http://127.0.0.1:${server.address().port}/`;
+let server = null;
+let base;
+if (liveBase) {
+  base = liveBase + "/";
+} else {
+  server = http.createServer((req, res) => {
+    let p = decodeURIComponent(req.url.split("?")[0]);
+    let file = path.join(siteDir, p);
+    if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
+    if (!fs.existsSync(file)) { res.writeHead(404); res.end("404"); return; }
+    res.writeHead(200, { "content-type": MIME[path.extname(file)] || "application/octet-stream" });
+    fs.createReadStream(file).pipe(res);
+  });
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  base = `http://127.0.0.1:${server.address().port}/`;
+}
 
 const pages = walk(siteDir)
   .map((f) => "/" + path.relative(siteDir, f).split(path.sep).join("/"))
   // mdBook's generated sidebar TOC and 404 pages carry no navbar and probe
   // resources that 404 by design; they are not book content.
   .filter((u) => !/\/(toc|404)\.html$/.test(u));
-const wantShot = process.argv.slice(3);
+const wantShot = shotArgs;
 const browser = await chromium.launch();
 const results = [];
 let failures = 0;
@@ -150,7 +162,7 @@ for (const url of pages) {
 }
 
 await browser.close();
-server.close();
+if (server) server.close();
 
 const withMath = results.filter((r) => r.metrics && r.metrics.hasMathSource).length;
 console.log(JSON.stringify({
